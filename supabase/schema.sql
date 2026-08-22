@@ -43,9 +43,18 @@ create index if not exists stops_trip_position_idx on public.trip_stops(trip_id,
 create index if not exists activities_city_idx on public.activities(city_id);
 create index if not exists trip_activities_stop_date_idx on public.trip_activities(trip_stop_id,scheduled_date);
 create index if not exists expenses_trip_idx on public.trip_expenses(trip_id);
+create table if not exists public.trip_likes (id uuid primary key default gen_random_uuid(),trip_id uuid not null references public.trips(id) on delete cascade,user_id uuid not null references auth.users(id) on delete cascade,created_at timestamptz not null default now(),unique(trip_id,user_id));
+create table if not exists public.trip_comments (id uuid primary key default gen_random_uuid(),trip_id uuid not null references public.trips(id) on delete cascade,user_id uuid not null references auth.users(id) on delete cascade,content text not null check(char_length(trim(content)) between 1 and 500),created_at timestamptz not null default now());
 
 alter table public.profiles enable row level security;alter table public.cities enable row level security;alter table public.activities enable row level security;
 alter table public.trips enable row level security;alter table public.trip_stops enable row level security;alter table public.trip_activities enable row level security;alter table public.trip_expenses enable row level security;
+alter table public.trip_likes enable row level security;alter table public.trip_comments enable row level security;
+create policy "public likes readable" on public.trip_likes for select using(exists(select 1 from public.trips t where t.id=trip_id and t.is_public));
+create policy "own likes insert" on public.trip_likes for insert with check(user_id=auth.uid() and exists(select 1 from public.trips t where t.id=trip_id and t.is_public));
+create policy "own likes delete" on public.trip_likes for delete using(user_id=auth.uid());
+create policy "public comments readable" on public.trip_comments for select using(exists(select 1 from public.trips t where t.id=trip_id and t.is_public));
+create policy "own comments insert" on public.trip_comments for insert with check(user_id=auth.uid() and exists(select 1 from public.trips t where t.id=trip_id and t.is_public));
+create policy "own comments delete" on public.trip_comments for delete using(user_id=auth.uid());
 create policy "catalog cities readable" on public.cities for select using(true);
 create policy "catalog activities readable" on public.activities for select using(true);
 create policy "own profile" on public.profiles for all using(auth.uid()=id) with check(auth.uid()=id);
