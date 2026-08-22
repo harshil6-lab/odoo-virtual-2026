@@ -115,20 +115,19 @@ export function Footer() {
           </p>
         </div>
         {[
-          ["Explore", "Destinations", "Experiences", "Community"],
-          ["Plan", "My journeys", "Calendar", "Budget"],
-          ["Company", "About", "How it works", "Contact"],
-          ["Legal", "Privacy", "Terms"],
-        ].map(([title, ...items]) => (
+          ["Explore", [["Destinations", "/app/explore"], ["Experiences", "/app/explore"], ["Community", "/app/community"]]],
+          ["Plan", [["My journeys", "/app/trips"], ["Calendar", "/app/dashboard"]]],
+          ["Account", [["Sign in", "/login"], ["Register", "/register"]]],
+        ].map(([title, items]) => (
           <div key={title}>
             <p className="text-sm font-bold text-sand uppercase tracking-wider">
               {title}
             </p>
             <div className="mt-4 space-y-3 text-sm text-white/65">
-              {items.map((x) => (
-                <span key={x} className="block text-white/45">
-                  {x}
-                </span>
+              {items.map(([label, to]) => (
+                <Link key={label} to={to} className="block text-white/65 hover:text-white">
+                  {label}
+                </Link>
               ))}
             </div>
           </div>
