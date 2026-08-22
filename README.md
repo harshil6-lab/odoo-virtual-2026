@@ -1,3 +1,5 @@
+<img width="646" height="209" alt="image" src="https://github.com/user-attachments/assets/3a4f816c-6989-4c87-837e-1eb0c154a94e" />
+
 # GlobeTrotter
 
 ## 📋 Table of Contents
