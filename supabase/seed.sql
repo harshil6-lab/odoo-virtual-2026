@@ -5,3 +5,15 @@ insert into public.activities(id,city_id,name,category,cost,duration_minutes,des
 insert into public.activities(id,city_id,name,category,cost,duration_minutes,description) select c.id||'-highlights',c.id,c.name||' Highlights Tour','sightseeing',38,180,'A curated introduction to the essential sights of '||c.name from public.cities c on conflict(id) do nothing;
 insert into public.activities(id,city_id,name,category,cost,duration_minutes,description) select c.id||'-local-table',c.id,c.name||' Local Table','food',64,120,'A memorable tasting of local dishes and stories in '||c.name from public.cities c on conflict(id) do nothing;
 insert into public.activities(id,city_id,name,category,cost,duration_minutes,description) select c.id||'-after-dark',c.id,c.name||' After Dark','nightlife',48,150,'Discover atmospheric venues and evening culture in '||c.name from public.cities c on conflict(id) do nothing;
+
+-- Expanded catalog (idempotent; safe to run repeatedly)
+insert into public.cities(id,name,country,cost_index,popularity,image_url) values
+('ahmedabad','Ahmedabad','India',2,78,null),('jaipur','Jaipur','India',2,92,null),('udaipur','Udaipur','India',3,89,null),('jodhpur','Jodhpur','India',2,84,null),('mumbai','Mumbai','India',4,95,null),('panaji','Panaji','India',3,86,null),('north-goa','North Goa','India',3,88,null),('south-goa','South Goa', 'India',3,81,null),('kochi','Kochi','India',2,84,null),('munnar','Munnar','India',2,86,null),('manali','Manali','India',3,89,null),('srinagar','Srinagar','India',3,88,null),('new-delhi','New Delhi','India',3,94,null),('agra','Agra','India',2,93,null),('varanasi','Varanasi','India',2,91,null),('kyoto','Kyoto','Japan',4,94,null),('osaka','Osaka','Japan',4,91,null),('nara','Nara','Japan',3,82,null),('seoul','Seoul','South Korea',4,93,null),('bangkok','Bangkok','Thailand',2,92,null),('phuket','Phuket','Thailand',3,88,null),('paris','Paris','France',4,98,null),('amsterdam','Amsterdam','Netherlands',4,89,null),('istanbul','Istanbul','Turkey',3,91,null),('cairo','Cairo','Egypt',2,86,null)
+on conflict(id) do update set name=excluded.name,country=excluded.country,cost_index=excluded.cost_index,popularity=excluded.popularity;
+insert into public.activities(id,city_id,name,category,cost,duration_minutes,description)
+select c.id||'-catalog-'||v.slug,c.id,c.name||' '||v.label,v.category,v.cost,v.duration,'A destination-specific experience in '||c.name||'.'
+from public.cities c cross join (values
+('heritage','Heritage Walk','sightseeing',35,180),('local-flavours','Local Flavours Tour','food',45,150),('culture','Art & Culture Visit','culture',30,120),('outdoors','Outdoor Escape','nature',40,180),('sunset','Sunset Discovery','adventure',38,150)
+) v(slug,label,category,cost,duration)
+where c.id in ('ahmedabad','jaipur','udaipur','jodhpur','mumbai','panaji','north-goa','south-goa','kochi','munnar','manali','srinagar','new-delhi','agra','varanasi','kyoto','osaka','nara','seoul','bangkok','phuket','paris','amsterdam','istanbul','cairo')
+on conflict(id) do nothing;
