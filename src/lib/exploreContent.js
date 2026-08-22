@@ -1,5 +1,79 @@
-const u=(id,w=1600)=>`https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=82`
-const gallery={tokyo:['photo-1540959733332-eab4deabeeaf','photo-1519501025264-65ba15a82390','photo-1503899036084-c55cdd92da26','photo-1536098561742-ca998e48cbcc','photo-1524413840807-0c3cb6fa808d'],paris:['photo-1502602898657-3e91760cbb34','photo-1499856871958-5b9627545d1a','photo-1431274172761-fca41d930114','photo-1522093007474-d86e9bf7ba6f','photo-1543349689-9a4d426bee8e'],'new-york':['photo-1485871981521-5b1fd3805eee','photo-1522083165195-3424ed129620','photo-1534430480872-3498386e7856','photo-1496588152823-86ff7695e68f','photo-1528988719300-046ff7faf8cb'],bali:['photo-1537996194471-e657df975ab4','photo-1533669955142-6a73332af4db','photo-1518548419970-58e3b4079ab2','photo-1539367628448-4bc5c9d171c8','photo-1555400038-63f5ba517a47'],london:['photo-1513635269975-59663e0ac1ad','photo-1526129318478-62ed807ebdf9','photo-1533929736458-ca588d08c8be','photo-1486299267070-83823f5448dd','photo-1505761671935-60b3a7427bad'],rome:['photo-1552832230-c0197dd311b5','photo-1529260830199-42c24126f198','photo-1531572753322-ad063cecc140','photo-1529154036614-a60975f5c760','photo-1555992828-700f40e7b5f3']}
-const copy={tokyo:'A city of thrilling contrasts, Tokyo pairs centuries-old shrines and quiet gardens with kinetic neighborhoods, exacting cuisine and boundary-pushing art.',paris:'Paris rewards curiosity: grand boulevards give way to intimate lanes, landmark museums sit beside neighborhood cafés, and the Seine keeps the city beautifully oriented.','new-york':'New York compresses culture, food, architecture and restless creative energy into five distinct boroughs, each best discovered one block at a time.',bali:'Bali moves between volcanic landscapes, intricate temple culture, surf towns and rice terraces, with a rhythm that invites a slower kind of travel.',london:'London layers royal history, global culture and village-like neighborhoods into a city that constantly changes character from one stop to the next.',rome:'Rome is an open-air archive where ancient ruins, baroque streets, neighborhood trattorias and daily life share the same extraordinary stage.'}
-export function enrichCity(city){const found=city.image_url?.match(/photo-[^?]+/)?.[0];const images=(gallery[city.id]||[found]).filter(Boolean).map(x=>u(x));return {...city,description:copy[city.id]||`${city.name} is best approached with time to wander, following its neighborhoods, local tables and defining landmarks at an unhurried pace.`,hero_image:images[0]||city.image_url,gallery_images:images}}
-export function enrichActivity(activity,city){const base=enrichCity(city);const hero=activity.image_url||base.gallery_images[1]||base.hero_image;return {...activity,hero_image:hero,gallery_images:[...new Set([hero,...base.gallery_images])].slice(0,5)}}
+const u = (id, w = 1600) =>
+  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=82`;
+const gallery = {
+  tokyo: [
+    "photo-1540959733332-eab4deabeeaf",
+    "photo-1519501025264-65ba15a82390",
+    "photo-1503899036084-c55cdd92da26",
+    "photo-1536098561742-ca998e48cbcc",
+    "photo-1524413840807-0c3cb6fa808d",
+  ],
+  paris: [
+    "photo-1502602898657-3e91760cbb34",
+    "photo-1499856871958-5b9627545d1a",
+    "photo-1431274172761-fca41d930114",
+    "photo-1522093007474-d86e9bf7ba6f",
+    "photo-1543349689-9a4d426bee8e",
+  ],
+  "new-york": [
+    "photo-1485871981521-5b1fd3805eee",
+    "photo-1522083165195-3424ed129620",
+    "photo-1534430480872-3498386e7856",
+    "photo-1496588152823-86ff7695e68f",
+    "photo-1528988719300-046ff7faf8cb",
+  ],
+  bali: [
+    "photo-1537996194471-e657df975ab4",
+    "photo-1533669955142-6a73332af4db",
+    "photo-1518548419970-58e3b4079ab2",
+    "photo-1539367628448-4bc5c9d171c8",
+    "photo-1555400038-63f5ba517a47",
+  ],
+  london: [
+    "photo-1513635269975-59663e0ac1ad",
+    "photo-1526129318478-62ed807ebdf9",
+    "photo-1533929736458-ca588d08c8be",
+    "photo-1486299267070-83823f5448dd",
+    "photo-1505761671935-60b3a7427bad",
+  ],
+  rome: [
+    "photo-1552832230-c0197dd311b5",
+    "photo-1529260830199-42c24126f198",
+    "photo-1531572753322-ad063cecc140",
+    "photo-1529154036614-a60975f5c760",
+    "photo-1555992828-700f40e7b5f3",
+  ],
+};
+const copy = {
+  tokyo:
+    "A city of thrilling contrasts, Tokyo pairs centuries-old shrines and quiet gardens with kinetic neighborhoods, exacting cuisine and boundary-pushing art.",
+  paris:
+    "Paris rewards curiosity: grand boulevards give way to intimate lanes, landmark museums sit beside neighborhood cafés, and the Seine keeps the city beautifully oriented.",
+  "new-york":
+    "New York compresses culture, food, architecture and restless creative energy into five distinct boroughs, each best discovered one block at a time.",
+  bali: "Bali moves between volcanic landscapes, intricate temple culture, surf towns and rice terraces, with a rhythm that invites a slower kind of travel.",
+  london:
+    "London layers royal history, global culture and village-like neighborhoods into a city that constantly changes character from one stop to the next.",
+  rome: "Rome is an open-air archive where ancient ruins, baroque streets, neighborhood trattorias and daily life share the same extraordinary stage.",
+};
+export function enrichCity(city) {
+  const found = city.image_url?.match(/photo-[^?]+/)?.[0];
+  const images = (gallery[city.id] || [found]).filter(Boolean).map((x) => u(x));
+  return {
+    ...city,
+    description:
+      copy[city.id] ||
+      `${city.name} is best approached with time to wander, following its neighborhoods, local tables and defining landmarks at an unhurried pace.`,
+    hero_image: images[0] || city.image_url,
+    gallery_images: images,
+  };
+}
+export function enrichActivity(activity, city) {
+  const base = enrichCity(city);
+  const hero = activity.image_url || base.gallery_images[1] || base.hero_image;
+  return {
+    ...activity,
+    hero_image: hero,
+    gallery_images: [...new Set([hero, ...base.gallery_images])].slice(0, 5),
+  };
+}
