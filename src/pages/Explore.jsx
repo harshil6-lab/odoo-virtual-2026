@@ -1,2 +1,149 @@
-import {useEffect,useMemo,useState} from 'react';import {Link} from 'react-router-dom';import {Search,Star,Clock} from 'lucide-react';import {getCities,getActivities} from '../lib/store';import {enrichCity,enrichActivity} from '../lib/exploreContent';import {money} from '../lib/utils';import {PageHeader,SmartImage,Loading} from '../components/UI';
-export default function Explore(){const [cities,setCities]=useState([]),[acts,setActs]=useState([]),[q,setQ]=useState(''),[tab,setTab]=useState('cities'),[cat,setCat]=useState('all');useEffect(()=>{Promise.all([getCities(),getActivities()]).then(([c,a])=>{setCities(c);setActs(a)})},[]);const cs=useMemo(()=>cities.filter(c=>`${c.name} ${c.country}`.toLowerCase().includes(q.toLowerCase())),[cities,q]);const as=useMemo(()=>acts.filter(a=>`${a.name} ${a.category} ${a.city?.name||''}`.toLowerCase().includes(q.toLowerCase())&&(cat==='all'||a.category===cat)),[acts,q,cat]);if(!cities.length)return <Loading/>;return <div className="page"><div className="max-w-4xl py-8 lg:py-14"><p className="text-accent text-sm font-bold uppercase tracking-widest">Explore</p><h1 className="text-5xl lg:text-7xl font-extrabold mt-3">Find somewhere worth going.</h1><p className="text-lg text-black/55 mt-5">Explore places, experiences and ideas for your next journey.</p><div className="relative mt-8 max-w-2xl"><Search className="absolute left-4 top-4 text-black/35"/><input className="field h-14 pl-12" value={q} onChange={e=>setQ(e.target.value)} placeholder="Search cities, countries, experiences..."/></div></div><div className="flex gap-2 border-b border-black/10 pb-3 mb-6"><button onClick={()=>setTab('cities')} className={`px-4 py-2 font-bold ${tab==='cities'?'text-accent border-b-2 border-accent':''}`}>Destinations</button><button onClick={()=>setTab('acts')} className={`px-4 py-2 font-bold ${tab==='acts'?'text-accent border-b-2 border-accent':''}`}>Experiences</button>{tab==='acts'&&<select className="field w-auto h-9 ml-auto capitalize" value={cat} onChange={e=>setCat(e.target.value)}><option value="all">All categories</option>{['sightseeing','food','culture','adventure','nature','nightlife'].map(x=><option key={x}>{x}</option>)}</select>}</div>{tab==='cities'?<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">{cs.map(c=>{const x=enrichCity(c);return <Link to={`/explore/cities/${c.id}`} key={c.id}><SmartImage src={x.hero_image} alt={`${c.name}, ${c.country}`} className="w-full aspect-[4/3] object-cover rounded-sm"/><div className="pt-4 flex justify-between"><div><h2 className="text-2xl font-bold">{c.name}</h2><p className="text-black/50">{c.country}</p></div><div className="text-right text-sm"><p>{'$'.repeat(c.cost_index)}</p><p><Star size={14} className="inline"/> {c.popularity}</p></div></div></Link>})}</div>:<div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">{as.map(a=>{const c=a.city||cities.find(x=>x.id===a.city_id),x=enrichActivity(a,c);return <Link to={`/explore/activities/${a.id}`} key={a.id}><SmartImage src={x.hero_image} alt={a.name} className="w-full aspect-[4/3] object-cover rounded-sm"/><p className="text-xs uppercase text-accent font-bold mt-4">{c?.name} · {a.category}</p><h2 className="text-xl font-bold mt-1">{a.name}</h2><p className="text-sm text-black/50 mt-2">{a.description}</p><p className="text-sm mt-3">{money(a.cost)} · <Clock size={14} className="inline"/> {a.duration_minutes} min</p></Link>})}</div>}</div>}
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Search, Star, Clock } from "lucide-react";
+import { getCities, getActivities } from "../lib/store";
+import { enrichCity, enrichActivity } from "../lib/exploreContent";
+import { money } from "../lib/utils";
+import { PageHeader, SmartImage, Loading } from "../components/UI";
+export default function Explore() {
+  const [cities, setCities] = useState([]),
+    [acts, setActs] = useState([]),
+    [q, setQ] = useState(""),
+    [tab, setTab] = useState("cities"),
+    [cat, setCat] = useState("all");
+  useEffect(() => {
+    Promise.all([getCities(), getActivities()]).then(([c, a]) => {
+      setCities(c);
+      setActs(a);
+    });
+  }, []);
+  const cs = useMemo(
+    () =>
+      cities.filter((c) =>
+        `${c.name} ${c.country}`.toLowerCase().includes(q.toLowerCase()),
+      ),
+    [cities, q],
+  );
+  const as = useMemo(
+    () =>
+      acts.filter(
+        (a) =>
+          `${a.name} ${a.category} ${a.city?.name || ""}`
+            .toLowerCase()
+            .includes(q.toLowerCase()) &&
+          (cat === "all" || a.category === cat),
+      ),
+    [acts, q, cat],
+  );
+  if (!cities.length) return <Loading />;
+  return (
+    <div className="page">
+      <div className="max-w-4xl py-8 lg:py-14">
+        <p className="text-accent text-sm font-bold uppercase tracking-widest">
+          Explore
+        </p>
+        <h1 className="text-5xl lg:text-7xl font-extrabold mt-3">
+          Find somewhere worth going.
+        </h1>
+        <p className="text-lg text-black/55 mt-5">
+          Explore places, experiences and ideas for your next journey.
+        </p>
+        <div className="relative mt-8 max-w-2xl">
+          <Search className="absolute left-4 top-4 text-black/35" />
+          <input
+            className="field h-14 pl-12"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search cities, countries, experiences..."
+          />
+        </div>
+      </div>
+      <div className="flex gap-2 border-b border-black/10 pb-3 mb-6">
+        <button
+          onClick={() => setTab("cities")}
+          className={`px-4 py-2 font-bold ${tab === "cities" ? "text-accent border-b-2 border-accent" : ""}`}
+        >
+          Destinations
+        </button>
+        <button
+          onClick={() => setTab("acts")}
+          className={`px-4 py-2 font-bold ${tab === "acts" ? "text-accent border-b-2 border-accent" : ""}`}
+        >
+          Experiences
+        </button>
+        {tab === "acts" && (
+          <select
+            className="field w-auto h-9 ml-auto capitalize"
+            value={cat}
+            onChange={(e) => setCat(e.target.value)}
+          >
+            <option value="all">All categories</option>
+            {[
+              "sightseeing",
+              "food",
+              "culture",
+              "adventure",
+              "nature",
+              "nightlife",
+            ].map((x) => (
+              <option key={x}>{x}</option>
+            ))}
+          </select>
+        )}
+      </div>
+      {tab === "cities" ? (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {cs.map((c) => {
+            const x = enrichCity(c);
+            return (
+              <Link to={`/explore/cities/${c.id}`} key={c.id}>
+                <SmartImage
+                  src={x.hero_image}
+                  alt={`${c.name}, ${c.country}`}
+                  className="w-full aspect-[4/3] object-cover rounded-sm"
+                />
+                <div className="pt-4 flex justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">{c.name}</h2>
+                    <p className="text-black/50">{c.country}</p>
+                  </div>
+                  <div className="text-right text-sm">
+                    <p>{"$".repeat(c.cost_index)}</p>
+                    <p>
+                      <Star size={14} className="inline" /> {c.popularity}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {as.map((a) => {
+            const c = a.city || cities.find((x) => x.id === a.city_id),
+              x = enrichActivity(a, c);
+            return (
+              <Link to={`/explore/activities/${a.id}`} key={a.id}>
+                <SmartImage
+                  src={x.hero_image}
+                  alt={a.name}
+                  className="w-full aspect-[4/3] object-cover rounded-sm"
+                />
+                <p className="text-xs uppercase text-accent font-bold mt-4">
+                  {c?.name} · {a.category}
+                </p>
+                <h2 className="text-xl font-bold mt-1">{a.name}</h2>
+                <p className="text-sm text-black/50 mt-2">{a.description}</p>
+                <p className="text-sm mt-3">
+                  {money(a.cost)} · <Clock size={14} className="inline" />{" "}
+                  {a.duration_minutes} min
+                </p>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

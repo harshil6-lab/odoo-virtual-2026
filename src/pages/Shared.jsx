@@ -1,8 +1,295 @@
-﻿import {useEffect,useMemo,useState} from 'react';import {Link,useParams} from 'react-router-dom';import {ArrowRight,CalendarDays,Compass,Copy,MapPin} from 'lucide-react';import {toast} from 'sonner';import {format,parseISO} from 'date-fns';import {getPublicTrip} from '../lib/store';import {tripDays,money} from '../lib/utils';import {Loading,ImageWithFallback,GlobeTrotterLogo} from '../components/UI';import {enrichActivity,enrichCity} from '../lib/exploreContent';
-const date=d=>d?format(parseISO(d),'dd MMM').toUpperCase():'DATE TBD';const full=d=>d?format(parseISO(d),'dd MMMM'):'Date TBD';
-function State({missing=false}){return <div className="min-h-screen grid place-items-center p-6 text-center bg-canvas"><div><Compass className="mx-auto text-accent mb-5" size={42}/><h1 className="text-3xl font-extrabold">{missing?'Journey not found.':'This journey isnâ€™t public.'}</h1><p className="text-black/50 mt-3 max-w-sm">{missing?'This journey may have been removed or the link may no longer be valid.':'The traveler hasnâ€™t shared this itinerary yet.'}</p><Link to="/" className="btn-primary mt-7">Explore GlobeTrotter</Link></div></div>}
-export default function Shared(){const {tripId}=useParams(),[trip,setTrip]=useState(null),[state,setState]=useState('loading');useEffect(()=>{getPublicTrip(tripId).then(t=>{if(!t){setState('missing');return}if(!t.is_public){setState('private');return}setTrip(t);setState('ready')}).catch(()=>setState('missing'))},[tripId]);if(state==='loading')return <Loading/>;if(state==='missing')return <State missing/>;if(state==='private')return <State/>;const stops=trip.trip_stops||[],activities=stops.flatMap(s=>(s.trip_activities||[]).map(a=>({...a,city:s.city,stop:s}))),total=activities.reduce((n,a)=>n+Number(a.custom_cost??a.activity?.cost??0),0);return <div className="min-h-screen bg-canvas"><header className="h-16 max-w-7xl mx-auto px-5 lg:px-8 flex items-center justify-between"><Link to="/"><GlobeTrotterLogo/></Link><button className="btn-secondary h-10" onClick={async()=>{try{await navigator.clipboard.writeText(location.href);toast.success('Journey link copied')}catch{toast.error("We couldn't copy the link.")}}}><Copy size={16}/>Copy journey link</button></header><section className="relative min-h-[520px] flex items-end overflow-hidden"><ImageWithFallback src={trip.cover_image||stops[0]?.city?.image_url} alt={trip.name} loading="eager" className="absolute inset-0 w-full h-full object-cover"/><div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"/><div className="relative max-w-7xl mx-auto w-full px-5 lg:px-8 pb-12 sm:pb-16 text-white"><p className="text-sm font-bold tracking-[.2em] uppercase text-orange-200">A GlobeTrotter journey</p><h1 className="text-5xl sm:text-7xl font-extrabold mt-4 max-w-4xl">{trip.name}</h1>{trip.description&&<p className="text-lg text-white/80 mt-5 max-w-2xl">{trip.description}</p>}<p className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold text-white/80"><span>{stops.map(s=>s.city?.name).join(' Â· ')}</span><span>{date(trip.start_date)} â€” {date(trip.end_date)}</span><span>{tripDays(trip)} days</span></p></div></section><main className="max-w-6xl mx-auto px-5 lg:px-8 py-16"><section className="max-w-3xl mb-16"><p className="text-accent text-sm font-bold tracking-widest uppercase">The story so far</p><h2 className="text-3xl sm:text-5xl font-extrabold mt-3">{tripDays(trip)} days. {stops.length} {stops.length===1?'city':'cities'}. One story.</h2><p className="text-xl text-black/60 leading-relaxed mt-5">{trip.description||'A journey shaped by places worth remembering and experiences worth making time for.'}</p></section><section className="grid sm:grid-cols-3 gap-8 border-y border-black/10 py-8 mb-16">{[[tripDays(trip),'DAYS'],[stops.length,'CITIES'],[activities.length,'EXPERIENCES']].map(([v,l])=><div key={l}><b className="text-4xl font-extrabold block">{v}</b><span className="text-xs tracking-widest text-black/45 font-bold">{l}</span></div>)}</section><section className="mb-20"><p className="text-accent text-sm font-bold tracking-widest uppercase">The route</p><div className="flex flex-col md:flex-row md:items-center mt-8">{stops.map((s,i)=><div key={s.id} className="flex md:flex-1 items-center"><div className="flex md:block items-center gap-4"><span className="size-10 rounded-full bg-ink text-white grid place-items-center font-bold">{String(i+1).padStart(2,'0')}</span><div className="md:mt-3"><h3 className="text-xl font-bold">{s.city?.name}</h3><p className="text-sm text-black/50">{date(s.start_date)} â€“ {date(s.end_date)}</p></div></div>{i<stops.length-1&&<div className="h-10 w-px md:h-px md:w-full bg-black/15 ml-5 md:ml-6 my-2 md:my-0"/>}</div>)}</div></section>{stops.map((stop,si)=>{const city=enrichCity(stop.city||{}),groups={};(stop.trip_activities||[]).forEach(a=>{const d=a.scheduled_date||stop.start_date;(groups[d]??=[]).push(a)});return <section key={stop.id} className="mb-20"><div className="grid lg:grid-cols-[.8fr_1.2fr] gap-8 items-start"><div className="lg:sticky lg:top-8"><ImageWithFallback src={city.hero_image||stop.city?.image_url} alt={stop.city?.name} className="w-full aspect-[4/3] object-cover rounded-sm"/><p className="text-accent text-sm font-bold tracking-widest uppercase mt-5">Stop {String(si+1).padStart(2,'0')}</p><h2 className="text-4xl sm:text-5xl font-extrabold mt-2">{stop.city?.name}</h2><p className="text-black/50 mt-2">{stop.city?.country} Â· {date(stop.start_date)} â€“ {date(stop.end_date)}</p><p className="text-sm text-black/45 mt-2">{stop.trip_activities?.length||0} experiences</p></div><div className="relative border-l border-black/10 pl-6 sm:pl-10">{Object.entries(groups).sort(([a],[b])=>a.localeCompare(b)).map(([d,items],di)=><div key={d} className="mb-10"><p className="text-xs text-accent font-bold tracking-widest">DAY {String(di+1).padStart(2,'0')}</p><h3 className="text-2xl font-bold mt-1">{full(d)}</h3><div className="space-y-4 mt-5">{items.sort((a,b)=>(a.scheduled_time||'99').localeCompare(b.scheduled_time||'99')).map(a=>{const content=enrichActivity(a.activity||{},stop.city||{});return <article key={a.id} className="flex gap-4 border-t border-black/10 pt-4"><ImageWithFallback src={content.hero_image||a.activity?.image_url} alt={a.activity?.name} className="size-20 rounded-lg object-cover shrink-0"/><div><p className="text-accent font-extrabold">{a.scheduled_time||'--:--'}</p><h4 className="text-lg font-bold">{a.activity?.name}</h4><p className="text-sm text-black/45 capitalize">{a.activity?.category} Â· {a.activity?.duration_minutes} min Â· {money(a.custom_cost??a.activity?.cost)}</p></div></article>})}</div></div>)}</div></div></section>})}<section className="surface rounded-xl p-7 sm:p-10 max-w-2xl"><p className="text-xs font-bold tracking-widest text-accent">JOURNEY SNAPSHOT</p><div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mt-5"><span><b className="text-2xl block">{tripDays(trip)}</b><small>days</small></span><span><b className="text-2xl block">{stops.length}</b><small>cities</small></span><span><b className="text-2xl block">{activities.length}</b><small>experiences</small></span><span><b className="text-2xl block">{money(total)}</b><small>estimated journey</small></span></div></section></main><section className="bg-forest text-white text-center px-5 py-24"><h2 className="text-4xl sm:text-6xl font-extrabold">Where will your story take you?</h2><p className="text-lg text-white/70 mt-5">Create your own journey with GlobeTrotter.</p><Link to={localStorage.getItem('gt_user')?'/app/trips/new':'/login'} className="btn bg-white text-ink mt-8">Start planning <ArrowRight size={17}/></Link></section></div>}
-
-
-
-
+﻿import { useEffect, useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { ArrowRight, CalendarDays, Compass, Copy, MapPin } from "lucide-react";
+import { toast } from "sonner";
+import { format, parseISO } from "date-fns";
+import { getPublicTrip } from "../lib/store";
+import { tripDays, money } from "../lib/utils";
+import { Loading, ImageWithFallback, GlobeTrotterLogo } from "../components/UI";
+import { enrichActivity, enrichCity } from "../lib/exploreContent";
+const date = (d) =>
+  d ? format(parseISO(d), "dd MMM").toUpperCase() : "DATE TBD";
+const full = (d) => (d ? format(parseISO(d), "dd MMMM") : "Date TBD");
+function State({ missing = false }) {
+  return (
+    <div className="min-h-screen grid place-items-center p-6 text-center bg-canvas">
+      <div>
+        <Compass className="mx-auto text-accent mb-5" size={42} />
+        <h1 className="text-3xl font-extrabold">
+          {missing ? "Journey not found." : "This journey isnâ€™t public."}
+        </h1>
+        <p className="text-black/50 mt-3 max-w-sm">
+          {missing
+            ? "This journey may have been removed or the link may no longer be valid."
+            : "The traveler hasnâ€™t shared this itinerary yet."}
+        </p>
+        <Link to="/" className="btn-primary mt-7">
+          Explore GlobeTrotter
+        </Link>
+      </div>
+    </div>
+  );
+}
+export default function Shared() {
+  const { tripId } = useParams(),
+    [trip, setTrip] = useState(null),
+    [state, setState] = useState("loading");
+  useEffect(() => {
+    getPublicTrip(tripId)
+      .then((t) => {
+        if (!t) {
+          setState("missing");
+          return;
+        }
+        if (!t.is_public) {
+          setState("private");
+          return;
+        }
+        setTrip(t);
+        setState("ready");
+      })
+      .catch(() => setState("missing"));
+  }, [tripId]);
+  if (state === "loading") return <Loading />;
+  if (state === "missing") return <State missing />;
+  if (state === "private") return <State />;
+  const stops = trip.trip_stops || [],
+    activities = stops.flatMap((s) =>
+      (s.trip_activities || []).map((a) => ({ ...a, city: s.city, stop: s })),
+    ),
+    total = activities.reduce(
+      (n, a) => n + Number(a.custom_cost ?? a.activity?.cost ?? 0),
+      0,
+    );
+  return (
+    <div className="min-h-screen bg-canvas">
+      <header className="h-16 max-w-7xl mx-auto px-5 lg:px-8 flex items-center justify-between">
+        <Link to="/">
+          <GlobeTrotterLogo />
+        </Link>
+        <button
+          className="btn-secondary h-10"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(location.href);
+              toast.success("Journey link copied");
+            } catch {
+              toast.error("We couldn't copy the link.");
+            }
+          }}
+        >
+          <Copy size={16} />
+          Copy journey link
+        </button>
+      </header>
+      <section className="relative min-h-[520px] flex items-end overflow-hidden">
+        <ImageWithFallback
+          src={trip.cover_image || stops[0]?.city?.image_url}
+          alt={trip.name}
+          loading="eager"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        <div className="relative max-w-7xl mx-auto w-full px-5 lg:px-8 pb-12 sm:pb-16 text-white">
+          <p className="text-sm font-bold tracking-[.2em] uppercase text-orange-200">
+            A GlobeTrotter journey
+          </p>
+          <h1 className="text-5xl sm:text-7xl font-extrabold mt-4 max-w-4xl">
+            {trip.name}
+          </h1>
+          {trip.description && (
+            <p className="text-lg text-white/80 mt-5 max-w-2xl">
+              {trip.description}
+            </p>
+          )}
+          <p className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold text-white/80">
+            <span>{stops.map((s) => s.city?.name).join(" Â· ")}</span>
+            <span>
+              {date(trip.start_date)} â€” {date(trip.end_date)}
+            </span>
+            <span>{tripDays(trip)} days</span>
+          </p>
+        </div>
+      </section>
+      <main className="max-w-6xl mx-auto px-5 lg:px-8 py-16">
+        <section className="max-w-3xl mb-16">
+          <p className="text-accent text-sm font-bold tracking-widest uppercase">
+            The story so far
+          </p>
+          <h2 className="text-3xl sm:text-5xl font-extrabold mt-3">
+            {tripDays(trip)} days. {stops.length}{" "}
+            {stops.length === 1 ? "city" : "cities"}. One story.
+          </h2>
+          <p className="text-xl text-black/60 leading-relaxed mt-5">
+            {trip.description ||
+              "A journey shaped by places worth remembering and experiences worth making time for."}
+          </p>
+        </section>
+        <section className="grid sm:grid-cols-3 gap-8 border-y border-black/10 py-8 mb-16">
+          {[
+            [tripDays(trip), "DAYS"],
+            [stops.length, "CITIES"],
+            [activities.length, "EXPERIENCES"],
+          ].map(([v, l]) => (
+            <div key={l}>
+              <b className="text-4xl font-extrabold block">{v}</b>
+              <span className="text-xs tracking-widest text-black/45 font-bold">
+                {l}
+              </span>
+            </div>
+          ))}
+        </section>
+        <section className="mb-20">
+          <p className="text-accent text-sm font-bold tracking-widest uppercase">
+            The route
+          </p>
+          <div className="flex flex-col md:flex-row md:items-center mt-8">
+            {stops.map((s, i) => (
+              <div key={s.id} className="flex md:flex-1 items-center">
+                <div className="flex md:block items-center gap-4">
+                  <span className="size-10 rounded-full bg-ink text-white grid place-items-center font-bold">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div className="md:mt-3">
+                    <h3 className="text-xl font-bold">{s.city?.name}</h3>
+                    <p className="text-sm text-black/50">
+                      {date(s.start_date)} â€“ {date(s.end_date)}
+                    </p>
+                  </div>
+                </div>
+                {i < stops.length - 1 && (
+                  <div className="h-10 w-px md:h-px md:w-full bg-black/15 ml-5 md:ml-6 my-2 md:my-0" />
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+        {stops.map((stop, si) => {
+          const city = enrichCity(stop.city || {}),
+            groups = {};
+          (stop.trip_activities || []).forEach((a) => {
+            const d = a.scheduled_date || stop.start_date;
+            (groups[d] ??= []).push(a);
+          });
+          return (
+            <section key={stop.id} className="mb-20">
+              <div className="grid lg:grid-cols-[.8fr_1.2fr] gap-8 items-start">
+                <div className="lg:sticky lg:top-8">
+                  <ImageWithFallback
+                    src={city.hero_image || stop.city?.image_url}
+                    alt={stop.city?.name}
+                    className="w-full aspect-[4/3] object-cover rounded-sm"
+                  />
+                  <p className="text-accent text-sm font-bold tracking-widest uppercase mt-5">
+                    Stop {String(si + 1).padStart(2, "0")}
+                  </p>
+                  <h2 className="text-4xl sm:text-5xl font-extrabold mt-2">
+                    {stop.city?.name}
+                  </h2>
+                  <p className="text-black/50 mt-2">
+                    {stop.city?.country} Â· {date(stop.start_date)} â€“{" "}
+                    {date(stop.end_date)}
+                  </p>
+                  <p className="text-sm text-black/45 mt-2">
+                    {stop.trip_activities?.length || 0} experiences
+                  </p>
+                </div>
+                <div className="relative border-l border-black/10 pl-6 sm:pl-10">
+                  {Object.entries(groups)
+                    .sort(([a], [b]) => a.localeCompare(b))
+                    .map(([d, items], di) => (
+                      <div key={d} className="mb-10">
+                        <p className="text-xs text-accent font-bold tracking-widest">
+                          DAY {String(di + 1).padStart(2, "0")}
+                        </p>
+                        <h3 className="text-2xl font-bold mt-1">{full(d)}</h3>
+                        <div className="space-y-4 mt-5">
+                          {items
+                            .sort((a, b) =>
+                              (a.scheduled_time || "99").localeCompare(
+                                b.scheduled_time || "99",
+                              ),
+                            )
+                            .map((a) => {
+                              const content = enrichActivity(
+                                a.activity || {},
+                                stop.city || {},
+                              );
+                              return (
+                                <article
+                                  key={a.id}
+                                  className="flex gap-4 border-t border-black/10 pt-4"
+                                >
+                                  <ImageWithFallback
+                                    src={
+                                      content.hero_image ||
+                                      a.activity?.image_url
+                                    }
+                                    alt={a.activity?.name}
+                                    className="size-20 rounded-lg object-cover shrink-0"
+                                  />
+                                  <div>
+                                    <p className="text-accent font-extrabold">
+                                      {a.scheduled_time || "--:--"}
+                                    </p>
+                                    <h4 className="text-lg font-bold">
+                                      {a.activity?.name}
+                                    </h4>
+                                    <p className="text-sm text-black/45 capitalize">
+                                      {a.activity?.category} Â·{" "}
+                                      {a.activity?.duration_minutes} min Â·{" "}
+                                      {money(a.custom_cost ?? a.activity?.cost)}
+                                    </p>
+                                  </div>
+                                </article>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </section>
+          );
+        })}
+        <section className="surface rounded-xl p-7 sm:p-10 max-w-2xl">
+          <p className="text-xs font-bold tracking-widest text-accent">
+            JOURNEY SNAPSHOT
+          </p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mt-5">
+            <span>
+              <b className="text-2xl block">{tripDays(trip)}</b>
+              <small>days</small>
+            </span>
+            <span>
+              <b className="text-2xl block">{stops.length}</b>
+              <small>cities</small>
+            </span>
+            <span>
+              <b className="text-2xl block">{activities.length}</b>
+              <small>experiences</small>
+            </span>
+            <span>
+              <b className="text-2xl block">{money(total)}</b>
+              <small>estimated journey</small>
+            </span>
+          </div>
+        </section>
+      </main>
+      <section className="bg-forest text-white text-center px-5 py-24">
+        <h2 className="text-4xl sm:text-6xl font-extrabold">
+          Where will your story take you?
+        </h2>
+        <p className="text-lg text-white/70 mt-5">
+          Create your own journey with GlobeTrotter.
+        </p>
+        <Link
+          to={localStorage.getItem("gt_user") ? "/app/trips/new" : "/login"}
+          className="btn bg-white text-ink mt-8"
+        >
+          Start planning <ArrowRight size={17} />
+        </Link>
+      </section>
+    </div>
+  );
+}
